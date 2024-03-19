@@ -1,32 +1,33 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const menu = mongoose.Schema({
-    name:{
+const menuSchema = new mongoose.Schema({
+    name: {
         type: String, 
         required: true
     },
-    price:{
+    price: {
         type: Number,
-        required:true
+        required: true
     },
-    taste:{
-        enum: ["spicy", "sweet", "sour"],
-        required: false
+    taste: {
+        type: String,
+        enum: ["spicy", "sweet", "sour"], // Define allowed values using enum
+        required: true
     },
-    is_drink:{
+    is_drink: {
         type: Boolean,
         default: false
     },
-    ingredients:{
+    ingredients: {
         type: [String],
         default: []
     },
-    sales:{
+    sales: {
         type: Number,
-        required: false
+        required: true
     } 
-})
+});
 
-const items = mongoose.model("menu", menu)
+const menu = mongoose.model("Menu", menuSchema);
 
-module.exports = items
+module.exports = menu;

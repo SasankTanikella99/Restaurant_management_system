@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-
+const bcrypt = require('bcrypt');
 const ENschema = mongoose.Schema({
     name: {
         type: String,
@@ -7,7 +7,7 @@ const ENschema = mongoose.Schema({
     },
     age: {
         type: Number,
-        required: false
+        required: true
     },
     work:{
         type: String,
@@ -25,10 +25,46 @@ const ENschema = mongoose.Schema({
     },
     address: {
         type: String,
-        required: false
+        required: true
+    },
+    username:{
+        type:String,
+        required:true,
+    },
+    password: {
+        type: String,
+        required: true
     }
 })
 
+ENschema.pre('save', async function(next) {
+    const person = this;
+    // Hashing only if password has been changed
+    if(!person.isModified('password')) return next();
+
+    try {
+        // hashing password
+        const salt = await bcrypt.genSalt(10)
+
+        const hashedpassword = await bcrypt.hashPassword(person.password, salt)
+        // override the password with hashed password
+        person.password = hashedpassword
+        next()
+    } catch (error) {
+        return next(error)
+    }
+})
+
+ENschema.methods.comparePassword = async function(candidatePassword){
+    try {
+        const isMatched = await bcrypt.compare(candidatePassword, this.password)
+        return isMatched
+    } catch (error) {
+        throw error
+
+    }
+}
+
 const model = mongoose.model("person", ENschema)
 
-module.exports = person
+module.exports = model

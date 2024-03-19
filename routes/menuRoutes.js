@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const menu = require('./models/menu.js')
+const menu = require('.././models/menu.js')
 const mongoose = require('mongoose');
 
 // GET and POST methods for menu

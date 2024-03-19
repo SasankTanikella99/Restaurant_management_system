@@ -1,18 +1,56 @@
 const express = require('express')
 const router = express.Router();
-const person = require('./models/entity.js')
+const person = require('../models/entity.js')
 const mongoose = require('mongoose');
+const {jwtAuthMiddleware, generateToken} = require('..jwt')
 
 
-router.get("/", async (req,res) => {
+router.get("/signup", async (req,res) => {
     try{
         const data = await person.find()
         console.log("Successfully found person");
-        res.status(201).json({message: "Successfully found person", data});
+
+        const payload = {
+            id: res.id,
+            username: res.username,
+        }
+        const token = generateToken(payload)
+        console.log(JSON.stringify(token))
+
+        res.status(201).json({message: "Successfully found person", token : token});
     }catch(err){
         console.log("Error finding person");
         res.status(500).json({message: "Error finding person"})
     }  
+})
+
+// Login Route
+router.post("/login", async (req, res) => {
+    try {
+        // Extract username and password from request body
+        const {username, password} = req.body; 
+        
+        // find by username and password
+        const user = await person.findOne({ username: username})
+
+        // if user does not exist, or password is incorrect, return error message
+        if(!user || !(await user.comparePassword(password))){
+            return res.status(401).json({errorMessage: 'Invalid Username or Password'})
+        }
+
+        // generate token
+        const payload = {
+            id: user.id,
+            username: user.username
+        }
+        const token = generateToken(payload)
+        //return token as response
+
+        res.json({token})
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({errorMessage: 'Server Error'})
+    }
 })
 
 router.post("/", async (req,res) => {
@@ -79,7 +117,7 @@ router.delete('/:id', async (req,res)=>{
 
 
 
-router.get("/:workType", async(req,res) => {
+router.get("/:workType", jwtAuthMiddleware, async(req,res) => {
     try {
         const workType = req.params.workType;
         if(workType == "chef"|| workType == "waiter" || workType == "manager"){
@@ -92,6 +130,20 @@ router.get("/:workType", async(req,res) => {
     } catch (error) {
         console.log("error fetching type")
         res.status(500).json({message:"Could not find the type"})
+    }
+})
+
+
+// Profile Routes
+router.get("/profile", jwtAuthMiddleware, async(req,res) => { 
+    try {
+        const userData = req.user
+        console.log("UserData :",userData);
+        const userID = userData.id
+        const user = await person.findById(userID)
+        res.status(200).json({message: "User found.",data:user});
+    } catch (error) {
+        res.status(500).json({message:"Could not find the User."})
     }
 })
 
